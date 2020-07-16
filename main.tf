@@ -15,6 +15,13 @@ resource "aws_key_pair" "deployer" {
   public_key = tls_private_key.my_key.public_key_openssh
 }
 
+# Saving Key Pair for ssh login for Client if needed
+resource "null_resource" "save_key_pair"  {
+provisioner "local-exec" {
+command = "echo  ${tls_private_key.my_key.private_key_pem} > mykey.pem"
+  }
+}
+
 # Deafult VPC
 resource "aws_default_vpc" "default" {
   tags = {
@@ -105,12 +112,10 @@ resource "null_resource" "configure_nfs" {
       "sudo yum install httpd php git -y",
 	    "sudo systemctl start httpd",
       "sudo systemctl enable httpd",
-      # "sudo yum -y install nfs-utils",     # Amazon ami has pre installed nfs utils. If you use other AMI uncomment this line 
-      #"sudo mkdir /workspace ",
+      # "sudo yum -y install nfs-utils",     # Amazon ami has pre installed nfs utils
       "sudo mount -t nfs -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2,noresvport ${aws_efs_file_system.efs.dns_name}:/  /var/www/html",
       "sudo chmod go+rw /var/www/html",
       "sudo git clone https://github.com/Apeksh742/EC2_instance_with_terraform.git /var/www/html",
-      #"sudo cp -rf /workspace /var/www/html"
     ]
   }
 }
